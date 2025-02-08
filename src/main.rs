@@ -49,22 +49,13 @@ fn get_project_config() -> ProjectConfig {
         _ => panic!("Invalid choice"),
     };
 
-    // Get project path, defaulting to ~/Dev
-    print!("Enter project path (press Enter for ~/Dev): ");
-    io::stdout().flush().unwrap();
-    let mut path = String::new();
-    io::stdin().read_line(&mut path).unwrap();
-    let path = path.trim().to_string();
-    let path = if path.is_empty() { 
-        dirs::home_dir()
-            .expect("Could not find home directory")
-            .join("Dev")
-            .to_str()
-            .expect("Invalid path")
-            .to_string()
-    } else { 
-        path 
-    };
+    // Always use ~/Dev as the project path
+    let path = dirs::home_dir()
+        .expect("Could not find home directory")
+        .join("Dev")
+        .to_str()
+        .expect("Invalid path")
+        .to_string();
 
     ProjectConfig {
         name,
