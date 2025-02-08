@@ -18,6 +18,7 @@ struct ProjectConfig {
     name: String,
     template: ProjectTemplate,
     base_path: String,
+    create_github_repo: bool,
 }
 
 fn main() {
@@ -54,10 +55,16 @@ fn prompt_project_config() -> ProjectConfig {
         .expect("Invalid path")
         .to_string();
 
+    // Add prompt for GitHub repo creation
+    let create_github_repo = prompt_input("Create GitHub repository? (y/N)")
+        .to_lowercase()
+        .starts_with('y');
+
     ProjectConfig {
         name,
         template,
         base_path,
+        create_github_repo,
     }
 }
 
@@ -94,7 +101,14 @@ fn create_project(config: ProjectConfig) -> io::Result<()> {
     }?;
 
     // Initialize git repository
-    init_git_repository(&project_path, &config.template)
+    init_git_repository(&project_path, &config.template)?;
+
+    // Create and push to GitHub if requested
+    if config.create_github_repo {
+        create_github_repository(&project_path, &config.name)?;
+    }
+
+    Ok(())
 }
 
 fn init_git_repository(path: &Path, template: &ProjectTemplate) -> io::Result<()> {
@@ -275,6 +289,40 @@ void loop() {
 "#;
         fs::write(src_path, template)?;
     }
+
+    Ok(())
+}
+
+fn create_github_repository(path: &Path, project_name: &str) -> io::Result<()> {
+    if !check_command_exists("gh") {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "GitHub CLI is not installed. Please install it from https://cli.github.com"
+        ));
+    }
+
+    println!("🌐 Creating GitHub repository...");
+
+    // Create GitHub repository
+    Command::new("gh")
+        .args(["repo", "create", project_name, "--private", "--source", ".", "--remote", "origin"])
+        .current_dir(path)
+        .status()
+        .map_err(|e| io::Error::new(
+            io::ErrorKind::Other,
+            format!("Failed to create GitHub repository: {}", e)
+        ))?;
+
+    // Push to GitHub
+    println!("⬆️  Pushing to GitHub...");
+    Command::new("git")
+        .args(["push", "-u", "origin", "main"])
+        .current_dir(path)
+        .status()
+        .map_err(|e| io::Error::new(
+            io::ErrorKind::Other,
+            format!("Failed to push to GitHub: {}", e)
+        ))?;
 
     Ok(())
 }
