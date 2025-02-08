@@ -4,53 +4,50 @@ use std::process::Command;
 use std::path::Path;
 use dirs;
 
-enum ProjectType {
-    Rust,
-    Python,
-    PlatformIO,
+// Make enum variants more descriptive and add derive traits
+#[derive(Debug, Clone)]
+enum ProjectTemplate {
+    RustCargo,
+    PythonPoetry,
+    PlatformIOEmbed,
 }
 
+// Add documentation and derive traits
+#[derive(Debug)]
 struct ProjectConfig {
     name: String,
-    project_type: ProjectType,
-    path: String,
+    template: ProjectTemplate,
+    base_path: String,
 }
 
 fn main() {
-    let config = get_project_config();
+    let config = prompt_project_config();
+    
     match create_project(config) {
-        Ok(_) => println!("Project created successfully!"),
-        Err(e) => eprintln!("Error creating project: {}", e),
-        
+        Ok(_) => println!("✨ Project created successfully!"),
+        Err(e) => eprintln!("❌ Error creating project: {}", e),
     }
 }
 
-fn get_project_config() -> ProjectConfig {
+fn prompt_project_config() -> ProjectConfig {
     // Get project name
-    print!("Enter project name: ");
-    io::stdout().flush().unwrap();
-    let mut name = String::new();
-    io::stdin().read_line(&mut name).unwrap();
-    let name = name.trim().to_string();
+    let name = prompt_input("Project name");
 
-    // Get project type
-    println!("Select project type:");
-    println!("1. Rust");
-    println!("2. Python");
-    println!("3. PlatformIO");
-    print!("Enter your choice (1-3): ");
-    io::stdout().flush().unwrap();
-    let mut choice = String::new();
-    io::stdin().read_line(&mut choice).unwrap();
-    let project_type = match choice.trim() {
-        "1" => ProjectType::Rust,
-        "2" => ProjectType::Python,
-        "3" => ProjectType::PlatformIO,
-        _ => panic!("Invalid choice"),
+    // Display template options
+    println!("\nAvailable project templates:");
+    println!("  1. 🦀 Rust (Cargo)");
+    println!("  2. 🐍 Python (Poetry)");
+    println!("  3. 🤖 PlatformIO (Embedded)");
+    
+    let template = match prompt_input("Choose template (1-3)").as_str() {
+        "1" => ProjectTemplate::RustCargo,
+        "2" => ProjectTemplate::PythonPoetry,
+        "3" => ProjectTemplate::PlatformIOEmbed,
+        _ => panic!("Invalid template choice"),
     };
 
-    // Always use ~/Dev as the project path
-    let path = dirs::home_dir()
+    // Use ~/Dev as the base project path
+    let base_path = dirs::home_dir()
         .expect("Could not find home directory")
         .join("Dev")
         .to_str()
@@ -59,71 +56,224 @@ fn get_project_config() -> ProjectConfig {
 
     ProjectConfig {
         name,
-        project_type,
-        path,
+        template,
+        base_path,
     }
+}
+
+// Helper function to reduce code duplication in prompts
+fn prompt_input(prompt: &str) -> String {
+    print!("{prompt}: ");
+    io::stdout().flush().unwrap();
+    
+    let mut input = String::new();
+    io::stdin()
+        .read_line(&mut input)
+        .expect("Failed to read input");
+    
+    input.trim().to_string()
+}
+
+fn check_command_exists(command: &str) -> bool {
+    Command::new("which")
+        .arg(command)
+        .output()
+        .map(|output| output.status.success())
+        .unwrap_or(false)
 }
 
 fn create_project(config: ProjectConfig) -> io::Result<()> {
-    let project_path = Path::new(&config.path).join(&config.name);
+    let project_path = Path::new(&config.base_path).join(&config.name);
     fs::create_dir_all(&project_path)?;
 
-    match config.project_type {
-        ProjectType::Rust => create_rust_project(&project_path),
-        ProjectType::Python => create_python_project(&project_path),
-        ProjectType::PlatformIO => create_platformio_project(&project_path),
+    // Create project based on template
+    match config.template {
+        ProjectTemplate::RustCargo => create_rust_project(&project_path),
+        ProjectTemplate::PythonPoetry => create_python_project(&project_path),
+        ProjectTemplate::PlatformIOEmbed => create_platformio_project(&project_path),
+    }?;
+
+    // Initialize git repository
+    init_git_repository(&project_path, &config.template)
+}
+
+fn init_git_repository(path: &Path, template: &ProjectTemplate) -> io::Result<()> {
+    if !check_command_exists("git") {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Git is not installed. Please install Git from https://git-scm.com"
+        ));
     }
+
+    println!("📦 Initializing Git repository...");
+
+    // Initialize git repo
+    Command::new("git")
+        .args(["init"])
+        .current_dir(path)
+        .status()
+        .map_err(|e| io::Error::new(
+            io::ErrorKind::Other,
+            format!("Failed to initialize git repository: {}", e)
+        ))?;
+
+    // Create .gitignore only for Python projects
+    if let ProjectTemplate::PythonPoetry = template {
+        let gitignore_content = r#"
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+.env
+.venv
+env/
+venv/
+ENV/
+dist/
+build/
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+"#;
+
+        fs::write(
+            path.join(".gitignore"),
+            gitignore_content.trim_start()
+        )?;
+    }
+
+    // Create initial commit
+    Command::new("git")
+        .args(["add", "."])
+        .current_dir(path)
+        .status()
+        .map_err(|e| io::Error::new(
+            io::ErrorKind::Other,
+            format!("Failed to stage files: {}", e)
+        ))?;
+
+    Command::new("git")
+        .args(["commit", "-m", "Initial commit"])
+        .current_dir(path)
+        .status()
+        .map_err(|e| io::Error::new(
+            io::ErrorKind::Other,
+            format!("Failed to create initial commit: {}", e)
+        ))?;
+
+    Ok(())
 }
 
 fn create_rust_project(path: &Path) -> io::Result<()> {
+    if !check_command_exists("cargo") {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Cargo is not installed. Please install Rust from https://rustup.rs"
+        ));
+    }
+
+    println!("🦀 Initializing Rust project...");
+    
     Command::new("cargo")
         .arg("init")
         .arg(path)
         .status()
-        .expect("Failed to initialize Rust project");
+        .map_err(|e| io::Error::new(
+            io::ErrorKind::Other,
+            format!("Failed to initialize Rust project: {}", e)
+        ))?;
+        
     Ok(())
 }
 
 fn create_python_project(path: &Path) -> io::Result<()> {
-    // Create basic Python project structure
+    if !check_command_exists("poetry") {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Poetry is not installed. Please install it from https://python-poetry.org"
+        ));
+    }
+
+    println!("🐍 Initializing Python project...");
+    
+    // Create standard Python project structure
     fs::create_dir(path.join("src"))?;
     fs::create_dir(path.join("tests"))?;
     
-    // Initialize Poetry
+    // Initialize and configure Poetry
+    let project_name = path
+        .file_name()
+        .unwrap()
+        .to_str()
+        .unwrap();
+        
     Command::new("poetry")
-        .arg("init")
-        .arg("--name").arg(path.file_name().unwrap().to_str().unwrap())
-        .arg("--author").arg("Matt Hadley <hello@matthadley.me")
+        .args([
+            "init",
+            "--name", project_name,
+            "--author", "Matt Hadley <hello@matthadley.me>",
+            // "--version", "0.0.1",
+            "--no-interaction",
+        ])
         .current_dir(path)
         .status()
-        .expect("Failed to initialize Poetry project");
+        .map_err(|e| io::Error::new(
+            io::ErrorKind::Other,
+            format!("Failed to initialize Poetry project: {}", e)
+        ))?;
 
     Command::new("poetry")
         .arg("install")
+        .arg("--no-root")
         .current_dir(path)
         .status()
-        .expect("Failed to install Poetry dependencies");
+        .map_err(|e| io::Error::new(
+            io::ErrorKind::Other,
+            format!("Failed to install Poetry dependencies: {}", e)
+        ))?;
 
     Ok(())
 }
 
 fn create_platformio_project(path: &Path) -> io::Result<()> {
+    if !check_command_exists("pio") {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "PlatformIO is not installed. Please install it from https://platformio.org"
+        ));
+    }
+
+    println!("🤖 Initializing PlatformIO project...");
+    
     // Initialize PlatformIO project
     Command::new("pio")
-        .arg("project")
-        .arg("init")
-        .arg("--board").arg("esp32dev") // Default to ESP32, can be made configurable
+        .args([
+            "project", "init",
+            "--board", "esp32dev", // Default to ESP32
+        ])
         .current_dir(path)
         .status()
-        .expect("Failed to initialize PlatformIO project");
+        .map_err(|e| io::Error::new(
+            io::ErrorKind::Other,
+            format!("Failed to initialize PlatformIO project: {}", e)
+        ))?;
 
-    // Create a basic main.cpp file if it doesn't exist
+    // Create default main.cpp if it doesn't exist
     let src_path = path.join("src/main.cpp");
     if !src_path.exists() {
-        fs::write(
-            src_path,
-            b"#include <Arduino.h>\n\nvoid setup() {\n    Serial.begin(115200);\n}\n\nvoid loop() {\n    Serial.println(\"Hello, World!\");\n    delay(1000);\n}\n"
-        )?;
+        let template = r#"#include <Arduino.h>
+
+void setup() {
+    Serial.begin(115200);
+}
+
+void loop() {
+    Serial.println("Hello, World!");
+    delay(1000);
+}
+"#;
+        fs::write(src_path, template)?;
     }
 
     Ok(())
