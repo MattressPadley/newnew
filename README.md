@@ -1,4 +1,4 @@
-# Project Initializer 🚀
+# NewNew 🚀
 
 A command-line tool that helps you quickly scaffold new projects with common templates and best practices.
 
@@ -23,18 +23,24 @@ Before using this tool, ensure you have the following installed:
 
 ## Installation 🔧
 
-1. Clone this repository
-2. Build the project:
+1. Install using Homebrew:
    ```bash
-   cargo build --release
+   brew tap mattresspadley/tap
+   brew install newnew
    ```
-3. The binary will be available in `target/release/project-initializer`
+
+2. Or, build from source:
+   1. Clone this repository
+   2. Install the binary:
+      ```bash
+      cargo install --path .
+      ```
 
 ## Usage 💻
 
 1. Run the tool:
    ```bash
-   ./project-initializer
+   newnew
    ```
 
 2. Follow the interactive prompts:
