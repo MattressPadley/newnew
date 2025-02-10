@@ -1,5 +1,5 @@
 use crate::utils::prompt_input;
-use dirs;
+use crate::config::Config;
 
 #[derive(Debug, Clone)]
 pub enum ProjectTemplate {
@@ -17,26 +17,40 @@ pub struct ProjectConfig {
 }
 
 pub fn prompt_project_config() -> ProjectConfig {
+    // Load config
+    let config = Config::load().expect("Failed to load config");
+
     // Get project name
     let name = prompt_input("Project name");
 
-    // Display template options
+    // Display enabled template options
     println!("\nAvailable project templates:");
-    println!("  1. 🦀 Rust (Cargo)");
-    println!("  2. 🐍 Python (Poetry)");
-    println!("  3. 🤖 PlatformIO (Embedded)");
-    
-    let template = match prompt_input("Choose template (1-3)").as_str() {
-        "1" => ProjectTemplate::RustCargo,
-        "2" => ProjectTemplate::PythonPoetry,
-        "3" => ProjectTemplate::PlatformIOEmbed,
-        _ => panic!("Invalid template choice"),
-    };
+    let mut valid_choices = Vec::new();
 
-    // Use ~/Dev as the base project path
-    let base_path = dirs::home_dir()
-        .expect("Could not find home directory")
-        .join("Dev")
+    if config.settings.enabled_templates.contains(&"rust".to_string()) {
+        println!("  1. 🦀 Rust (Cargo)");
+        valid_choices.push(("1".to_string(), ProjectTemplate::RustCargo));
+    }
+    if config.settings.enabled_templates.contains(&"python".to_string()) {
+        let choice = (valid_choices.len() + 1).to_string();
+        println!("  {}. 🐍 Python (Poetry)", choice);
+        valid_choices.push((choice, ProjectTemplate::PythonPoetry));
+    }
+    if config.settings.enabled_templates.contains(&"platformio".to_string()) {
+        let choice = (valid_choices.len() + 1).to_string();
+        println!("  {}. 🤖 PlatformIO (Embedded)", choice);
+        valid_choices.push((choice, ProjectTemplate::PlatformIOEmbed));
+    }
+
+    let choice = prompt_input(&format!("Choose template (1-{})", valid_choices.len()));
+    let template = valid_choices
+        .iter()
+        .find(|(c, _)| c == &choice)
+        .map(|(_, t)| t.clone())
+        .expect("Invalid template choice");
+
+    // Use projects_dir from config
+    let base_path = config.settings.projects_dir
         .to_str()
         .expect("Invalid path")
         .to_string();
