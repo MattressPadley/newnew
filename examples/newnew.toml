@@ -1,0 +1,3 @@
+[settings]
+projects_dir = "~/Dev"
+enabled_templates = ["rust", "python", "platformio"] 

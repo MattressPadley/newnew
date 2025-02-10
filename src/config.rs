@@ -52,16 +52,16 @@ impl Config {
         let config_path = get_config_path()?;
         
         if !config_path.exists() {
-            let default_config = Self::default();
-            let config_str = toml::to_string_pretty(&default_config)
-                .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+            let default_config = include_str!("../examples/newnew.toml");
             
             if let Some(parent) = config_path.parent() {
                 fs::create_dir_all(parent)?;
             }
             
-            fs::write(&config_path, config_str)?;
-            return Ok(default_config);
+            fs::write(&config_path, default_config)?;
+            
+            return toml::from_str(default_config)
+                .map_err(|e| io::Error::new(io::ErrorKind::Other, e));
         }
 
         let config_str = fs::read_to_string(config_path)?;
