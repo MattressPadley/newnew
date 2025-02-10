@@ -5,17 +5,44 @@ use std::path::PathBuf;
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Config {
+    pub settings: Settings,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Settings {
+    #[serde(default = "default_projects_dir")]
     pub projects_dir: PathBuf,
+    #[serde(default = "default_templates")]
+    pub enabled_templates: Vec<String>,
+}
+
+fn default_projects_dir() -> PathBuf {
+    dirs::home_dir()
+        .expect("Could not find home directory")
+        .join("Dev")
+}
+
+fn default_templates() -> Vec<String> {
+    vec![
+        "rust".to_string(),
+        "python".to_string(),
+        "platformio".to_string(),
+    ]
+}
+
+impl Default for Settings {
+    fn default() -> Self {
+        Settings {
+            projects_dir: default_projects_dir(),
+            enabled_templates: default_templates(),
+        }
+    }
 }
 
 impl Default for Config {
     fn default() -> Self {
-        let default_projects_dir = dirs::home_dir()
-            .expect("Could not find home directory")
-            .join("Dev");
-
         Config {
-            projects_dir: default_projects_dir,
+            settings: Settings::default(),
         }
     }
 }
@@ -26,10 +53,9 @@ impl Config {
         
         if !config_path.exists() {
             let default_config = Self::default();
-            let config_str = toml::to_string(&default_config)
+            let config_str = toml::to_string_pretty(&default_config)
                 .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
             
-            // Create parent directories if they don't exist
             if let Some(parent) = config_path.parent() {
                 fs::create_dir_all(parent)?;
             }

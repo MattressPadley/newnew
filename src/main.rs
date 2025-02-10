@@ -6,7 +6,7 @@ mod config;
 
 use project::{ProjectConfig, ProjectTemplate, prompt_project_config};
 use templates::{create_rust_project, create_python_project, create_platformio_project};
-use utils::{check_command_exists, prompt_input};
+use utils::{prompt_input};
 use github::{init_git_repository, create_github_repository};
 
 use std::io;
