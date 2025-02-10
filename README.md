@@ -66,12 +66,55 @@ steps:
 
 ### Variables
 
-- Variables are collected before execution
-- Available in commands with `{variable_name}` syntax
-- Can be conditional based on other variables
-- Types:
-  - `string` (default): Free text input
-  - `boolean`: Yes/no question
+Variables are collected before execution and can be used in commands with `{variable_name}` syntax. Variables can be conditional based on other variables.
+
+Supported variable types:
+- `string` (default): Free text input
+- `boolean`: Yes/no question with interactive selection
+- `select`: Single choice from a list of options
+- `multiselect`: Multiple choices from a list of options
+
+Example variable definitions:
+```yaml
+variables:
+  # Simple text input
+  project_name:
+    prompt: Project name
+    default: my-project
+
+  # Boolean yes/no selection
+  use_docker:
+    prompt: Add Docker support?
+    type: boolean
+    default: false
+
+  # Single select from options
+  project_type:
+    prompt: Choose project type
+    type: select
+    options:
+      - "Binary"
+      - "Library"
+      - "Both"
+
+  # Multiple select from options
+  dependencies:
+    prompt: Select dependencies to include
+    type: multiselect
+    options:
+      - "serde"
+      - "tokio"
+      - "clap"
+      - "reqwest"
+```
+
+For `multiselect` variables, the selected values are joined with commas and can be accessed in commands or templates. For example:
+```yaml
+steps:
+  - name: Add dependencies
+    run: |
+      cargo add {dependencies}
+```
 
 ### Steps
 
