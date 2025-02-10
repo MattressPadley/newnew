@@ -13,6 +13,27 @@ variables:
     prompt: Create GitHub repository?
     type: boolean
     default: false
+  use_tests:
+    prompt: "Include test setup?"
+    type: boolean
+    default: "true"
+  
+  dependencies:
+    prompt: "Select dependencies to include"
+    type: multiselect
+    options:
+      - "serde"
+      - "tokio"
+      - "clap"
+      - "reqwest"
+  
+  project_type:
+    prompt: "Choose project type"
+    type: select
+    options:
+      - "Binary"
+      - "Library"
+      - "Both"
 
 # Steps run in sequence, each can be conditional
 steps:

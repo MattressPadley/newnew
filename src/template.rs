@@ -16,14 +16,13 @@ pub struct Template {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Variable {
     pub prompt: String,
-    #[serde(default)]
+    #[serde(rename = "type")]
     pub type_: Option<String>,
-    #[serde(default)]
     pub default: Option<String>,
-    #[serde(default)]
-    pub if_: Option<String>,
     #[serde(rename = "if")]
+    pub if_: Option<String>,
     pub if_condition: Option<String>,
+    pub options: Option<Vec<String>>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
