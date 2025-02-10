@@ -1,5 +1,5 @@
 use crate::utils::prompt_input;
-use dirs;
+use crate::config::Config;
 
 #[derive(Debug, Clone)]
 pub enum ProjectTemplate {
@@ -17,6 +17,9 @@ pub struct ProjectConfig {
 }
 
 pub fn prompt_project_config() -> ProjectConfig {
+    // Load config
+    let config = Config::load().expect("Failed to load config");
+
     // Get project name
     let name = prompt_input("Project name");
 
@@ -33,10 +36,8 @@ pub fn prompt_project_config() -> ProjectConfig {
         _ => panic!("Invalid template choice"),
     };
 
-    // Use ~/Dev as the base project path
-    let base_path = dirs::home_dir()
-        .expect("Could not find home directory")
-        .join("Dev")
+    // Use projects_dir from config
+    let base_path = config.projects_dir
         .to_str()
         .expect("Invalid path")
         .to_string();

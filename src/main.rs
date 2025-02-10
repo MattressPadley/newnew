@@ -2,6 +2,7 @@ mod project;
 mod templates;
 mod utils;
 mod github;
+mod config;
 
 use project::{ProjectConfig, ProjectTemplate, prompt_project_config};
 use templates::{create_rust_project, create_python_project, create_platformio_project};

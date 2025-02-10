@@ -1,55 +1,54 @@
-use crate::utils::prompt_input;
-use dirs;
+use serde::{Deserialize, Serialize};
+use std::fs;
+use std::io;
+use std::path::PathBuf;
 
-#[derive(Debug, Clone)]
-pub enum ProjectTemplate {
-    RustCargo,
-    PythonPoetry,
-    PlatformIOEmbed,
+#[derive(Debug, Deserialize, Serialize)]
+pub struct Config {
+    pub projects_dir: PathBuf,
 }
 
-#[derive(Debug)]
-pub struct ProjectConfig {
-    pub name: String,
-    pub template: ProjectTemplate,
-    pub base_path: String,
-    pub create_github_repo: bool,
-}
+impl Default for Config {
+    fn default() -> Self {
+        let default_projects_dir = dirs::home_dir()
+            .expect("Could not find home directory")
+            .join("Dev");
 
-pub fn prompt_project_config() -> ProjectConfig {
-    // Get project name
-    let name = prompt_input("Project name");
-
-    // Display template options
-    println!("\nAvailable project templates:");
-    println!("  1. 🦀 Rust (Cargo)");
-    println!("  2. 🐍 Python (Poetry)");
-    println!("  3. 🤖 PlatformIO (Embedded)");
-    
-    let template = match prompt_input("Choose template (1-3)").as_str() {
-        "1" => ProjectTemplate::RustCargo,
-        "2" => ProjectTemplate::PythonPoetry,
-        "3" => ProjectTemplate::PlatformIOEmbed,
-        _ => panic!("Invalid template choice"),
-    };
-
-    // Use ~/Dev as the base project path
-    let base_path = dirs::home_dir()
-        .expect("Could not find home directory")
-        .join("Dev")
-        .to_str()
-        .expect("Invalid path")
-        .to_string();
-
-    // Add prompt for GitHub repo creation
-    let create_github_repo = prompt_input("Create GitHub repository? (y/N)")
-        .to_lowercase()
-        .starts_with('y');
-
-    ProjectConfig {
-        name,
-        template,
-        base_path,
-        create_github_repo,
+        Config {
+            projects_dir: default_projects_dir,
+        }
     }
+}
+
+impl Config {
+    pub fn load() -> io::Result<Self> {
+        let config_path = get_config_path()?;
+        
+        if !config_path.exists() {
+            let default_config = Self::default();
+            let config_str = toml::to_string(&default_config)
+                .map_err(|e| io::Error::new(io::ErrorKind::Other, e))?;
+            
+            // Create parent directories if they don't exist
+            if let Some(parent) = config_path.parent() {
+                fs::create_dir_all(parent)?;
+            }
+            
+            fs::write(&config_path, config_str)?;
+            return Ok(default_config);
+        }
+
+        let config_str = fs::read_to_string(config_path)?;
+        toml::from_str(&config_str)
+            .map_err(|e| io::Error::new(io::ErrorKind::Other, e))
+    }
+}
+
+fn get_config_path() -> io::Result<PathBuf> {
+    dirs::home_dir()
+        .map(|p| p.join(".config").join("newnew").join("newnew.toml"))
+        .ok_or_else(|| io::Error::new(
+            io::ErrorKind::NotFound,
+            "Could not determine config directory"
+        ))
 } 
