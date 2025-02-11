@@ -15,7 +15,7 @@ steps:
       mkdir -p {project_dir}/tests
 
   - name: Initialize Poetry project
-    run: poetry init --name {project_name} --no-interaction
+    run: poetry init --name {project_dir} --no-interaction
     check: poetry
     error: Poetry is not installed. Please install it from https://python-poetry.org
 
@@ -35,5 +35,5 @@ steps:
     run: |
       git add .
       git commit -m "Initial commit"
-      gh repo create {project_name} --private --source=. --remote=origin
+      gh repo create {project_dir} --private --source=. --remote=origin
       git push -u origin main 

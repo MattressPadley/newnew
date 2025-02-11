@@ -55,5 +55,5 @@ steps:
     run: |
       git add .
       git commit -m 'Initial commit'
-      gh repo create {project_name} --private --source=. --remote=origin
+      gh repo create {project_dir} --private --source=. --remote=origin
       git push -u origin main 
