@@ -18,11 +18,15 @@ struct Cli {
     /// Install example templates
     #[arg(long)]
     examples: bool,
+
+    /// Target directory for the new project (overrides config)
+    #[arg(short, long)]
+    dir: Option<String>,
 }
 
 fn main() {
     let cli = Cli::parse();
-    let config = prompt_project_config(cli.examples);
+    let config = prompt_project_config(cli.examples, cli.dir);
     
     match create_project(config) {
         Ok(_) => println!("✨ Project created successfully!"),

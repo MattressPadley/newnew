@@ -12,7 +12,7 @@ pub struct ProjectConfig {
     pub variables: HashMap<String, String>,
 }
 
-pub fn prompt_project_config(with_examples: bool) -> ProjectConfig {
+pub fn prompt_project_config(with_examples: bool, target_dir: Option<String>) -> ProjectConfig {
     // Load config
     let config = Config::load().expect("Failed to load config");
     
@@ -95,10 +95,10 @@ pub fn prompt_project_config(with_examples: bool) -> ProjectConfig {
         name,
         template_name,
         template,
-        base_path: config.settings.projects_dir
+        base_path: target_dir.unwrap_or_else(|| config.settings.projects_dir
             .to_str()
             .expect("Invalid path")
-            .to_string(),
+            .to_string()),
         variables,
     }
 }
