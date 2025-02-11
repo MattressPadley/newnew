@@ -1,6 +1,17 @@
 # Changelog
 
-# 0.1.1 (2025-02-08)
+# 0.2.0 (2025-02-10)
 
-- add build workflow
+- 📚 fix install instructions
+- 🐛 example template name
+- 📚 document var types
+- ✨ better ux
+- 📚 document templates
+- ✨ user templates
+- ♻️ derive config from example
+- ✨ template settings
+- ✨ add user config
+- ♻️ modules
+- 👷 add justfile
+- 🔧 update Readme
 
