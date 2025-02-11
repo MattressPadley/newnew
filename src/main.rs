@@ -3,6 +3,7 @@ mod template;
 mod utils;
 mod config;
 
+use clap::Parser;
 use project::{ProjectConfig, prompt_project_config};
 use utils::check_command_exists;
 use std::io;
@@ -11,8 +12,17 @@ use std::fs;
 use std::process::Command;
 use std::collections::HashMap;
 
+#[derive(Parser)]
+#[command(author, version, about, long_about = None)]
+struct Cli {
+    /// Install example templates
+    #[arg(long)]
+    examples: bool,
+}
+
 fn main() {
-    let config = prompt_project_config();
+    let cli = Cli::parse();
+    let config = prompt_project_config(cli.examples);
     
     match create_project(config) {
         Ok(_) => println!("✨ Project created successfully!"),

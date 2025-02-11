@@ -54,7 +54,6 @@ pub fn load_templates() -> io::Result<HashMap<String, Template>> {
 
     if !template_dir.exists() {
         fs::create_dir_all(&template_dir)?;
-        copy_example_templates(&template_dir)?;
     }
 
     for entry in fs::read_dir(template_dir)? {
@@ -75,6 +74,19 @@ pub fn load_templates() -> io::Result<HashMap<String, Template>> {
     }
 
     Ok(templates)
+}
+
+pub fn copy_example_templates_if_needed(with_examples: bool) -> io::Result<()> {
+    if !with_examples {
+        return Ok(());
+    }
+
+    let template_dir = get_template_dir()?;
+    if !template_dir.exists() {
+        fs::create_dir_all(&template_dir)?;
+    }
+    
+    copy_example_templates(&template_dir)
 }
 
 fn get_template_dir() -> io::Result<PathBuf> {
