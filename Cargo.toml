@@ -1,6 +1,6 @@
 [package]
 name = "newnew"
-version = "0.2.0"
+version = "0.3.0"
 edition = "2021"
 
 [dependencies]
@@ -9,3 +9,4 @@ serde = { version = "1.0", features = ["derive"] }
 serde_yaml = "0.9"
 toml = "0.7"
 dialoguer = "0.11.0"
+clap = { version = "4.5", features = ["derive"] }

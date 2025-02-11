@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use crate::utils::{prompt_input, prompt_select, prompt_confirm, prompt_multiselect};
 use crate::config::Config;
-use crate::template::{Template, load_templates};
+use crate::template::{Template, load_templates, copy_example_templates_if_needed};
 
 #[derive(Debug)]
 pub struct ProjectConfig {
@@ -12,9 +12,12 @@ pub struct ProjectConfig {
     pub variables: HashMap<String, String>,
 }
 
-pub fn prompt_project_config() -> ProjectConfig {
+pub fn prompt_project_config(with_examples: bool, target_dir: Option<String>) -> ProjectConfig {
     // Load config
     let config = Config::load().expect("Failed to load config");
+    
+    // Copy example templates if flag is set
+    copy_example_templates_if_needed(with_examples).expect("Failed to copy example templates");
     
     // Load templates
     let templates = load_templates().expect("Failed to load templates");
@@ -24,6 +27,11 @@ pub fn prompt_project_config() -> ProjectConfig {
         .iter()
         .map(|(name, template)| format!("{} {} {}", template.emoji, name, template.description))
         .collect();
+
+    if template_options.is_empty() {
+        eprintln!("No templates found. Try running with --examples to install example templates.");
+        std::process::exit(1);
+    }
 
     // Get template choice using select box
     let selected_template = prompt_select("Choose template", &template_options);
@@ -87,10 +95,10 @@ pub fn prompt_project_config() -> ProjectConfig {
         name,
         template_name,
         template,
-        base_path: config.settings.projects_dir
+        base_path: target_dir.unwrap_or_else(|| config.settings.projects_dir
             .to_str()
             .expect("Invalid path")
-            .to_string(),
+            .to_string()),
         variables,
     }
 }
