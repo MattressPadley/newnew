@@ -3,8 +3,6 @@ description: An embedded project using PlatformIO
 emoji: 🤖
 
 variables:
-  project_name:
-    prompt: Project name
   board:
     prompt: Board type
     default: esp32dev
