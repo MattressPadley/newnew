@@ -32,13 +32,27 @@ cargo install --path .
 
 Simply run:
 ```bash
-newnew
+newnew [FLAGS]
 ```
+
+### Flags
+- `--examples`: Install example templates to get started
+- `--help`: Show help information
+- `--version`: Show version information
 
 The tool will:
 1. Show available templates
 2. Prompt for template-specific variables
 3. Create your project following the template steps
+
+### Getting Started
+
+To install example templates and create your first project:
+```bash
+newnew --examples
+```
+
+This will install example templates to `~/.config/newnew/templates/`.
 
 ## Template System 📋
 
