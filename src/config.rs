@@ -12,8 +12,6 @@ pub struct Config {
 pub struct Settings {
     #[serde(default = "default_projects_dir")]
     pub projects_dir: PathBuf,
-    #[serde(default = "default_templates")]
-    pub enabled_templates: Vec<String>,
 }
 
 fn default_projects_dir() -> PathBuf {
@@ -22,19 +20,10 @@ fn default_projects_dir() -> PathBuf {
         .join("Dev")
 }
 
-fn default_templates() -> Vec<String> {
-    vec![
-        "rust".to_string(),
-        "python".to_string(),
-        "platformio".to_string(),
-    ]
-}
-
 impl Default for Settings {
     fn default() -> Self {
         Settings {
             projects_dir: default_projects_dir(),
-            enabled_templates: default_templates(),
         }
     }
 }

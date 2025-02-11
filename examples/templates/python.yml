@@ -1,0 +1,39 @@
+name: Python
+description: A Python project using Poetry
+emoji: 🐍
+
+variables:
+  use_github:
+    prompt: Create GitHub repository?
+    type: boolean
+    default: false
+
+steps:
+  - name: Create project structure
+    run: |
+      mkdir -p {project_dir}/src
+      mkdir -p {project_dir}/tests
+
+  - name: Initialize Poetry project
+    run: poetry init --name {project_name} --no-interaction
+    check: poetry
+    error: Poetry is not installed. Please install it from https://python-poetry.org
+
+
+  - name: Initialize git
+    if: use_github
+    run: git init
+
+  - name: Copy gitignore
+    if: use_github
+    copy:
+      from: python/.gitignore
+      to: .gitignore
+
+  - name: Create GitHub repository
+    if: use_github
+    run: |
+      git add .
+      git commit -m "Initial commit"
+      gh repo create {project_name} --private --source=. --remote=origin
+      git push -u origin main 

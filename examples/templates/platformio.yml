@@ -1,0 +1,41 @@
+name: PlatformIO
+description: An embedded project using PlatformIO
+emoji: 🤖
+
+variables:
+  board:
+    prompt: Board type
+    default: esp32dev
+  use_github:
+    prompt: Create GitHub repository?
+    type: boolean
+    default: false
+
+steps:
+  - name: Initialize PlatformIO project
+    run: pio project init --board {board}
+    check: pio
+    error: PlatformIO is not installed. Please install it from https://platformio.org
+
+  - name: Copy main file
+    copy:
+      from: platformio/src/main.cpp
+      to: src/main.cpp
+
+  - name: Initialize git
+    if: use_github
+    run: git init
+
+  - name: Copy gitignore
+    if: use_github
+    copy:
+      from: platformio/.gitignore
+      to: .gitignore
+
+  - name: Create GitHub repository
+    if: use_github
+    run: |
+      git add .
+      git commit -m "Initial commit"
+      gh repo create {project_name} --private --source=. --remote=origin
+      git push -u origin main

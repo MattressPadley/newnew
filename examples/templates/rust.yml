@@ -1,0 +1,59 @@
+name: Rust
+description: A Rust project using Cargo
+emoji: 🦀
+
+# Variables are defined at the top and can be:
+# - prompted from user
+# - set from command output
+# - hardcoded defaults
+variables:
+  use_github:
+    prompt: Create GitHub repository?
+    type: boolean
+    default: false
+  use_tests:
+    prompt: "Include test setup?"
+    type: boolean
+    default: "true"
+  
+  dependencies:
+    prompt: "Select dependencies to include"
+    type: multiselect
+    options:
+      - "serde"
+      - "tokio"
+      - "clap"
+      - "reqwest"
+  
+  project_type:
+    prompt: "Choose project type"
+    type: select
+    options:
+      - "Binary"
+      - "Library"
+      - "Both"
+
+# Steps run in sequence, each can be conditional
+steps:
+  - name: Initialize Rust project
+    run: cargo init {project_dir}
+    check: cargo
+    error: Cargo is not installed. Please install Rust from https://rustup.rs
+
+  - name: Initialize git
+    if: use_github
+    run: git init
+
+  - name: Copy gitignore
+    if: use_github
+    copy:
+      from: rust/.gitignore
+      to: .gitignore
+
+  - name: Create GitHub repository
+    if: use_github
+    run: |
+      git add .
+      git commit -m 'Initial commit'
+      gh repo create {project_name} --private --source=. --remote=origin
+      git push -u origin main 
