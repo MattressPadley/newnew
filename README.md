@@ -13,9 +13,20 @@ A flexible project scaffolding tool that creates new projects from customizable 
 
 ## Installation 🔧
 
+Install using Homebrew:
+
 ```bash
-cargo install newnew
+brew tap mattresspadley/tap
+brew install newnew
 ```
+
+Or, build from source:
+
+Clone this repository
+Install the binary:
+```bash
+cargo install --path .
+``` 
 
 ## Usage 💻
 
