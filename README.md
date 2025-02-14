@@ -80,12 +80,14 @@ variables:
     prompt: "Question to ask user?"
     type: boolean  # Optional, for yes/no questions
     default: false  # Optional default value
-    if: another_variable  # Optional condition
+    if: another_variable  # Optional condition to show if true
+    if-not: another_variable  # Optional condition to show if false
 
 # Steps to execute in sequence
 steps:
   - name: Step Name  # Displayed during execution
-    if: variable_name  # Optional condition
+    if: variable_name  # Optional condition to run if true
+    if-not: variable_name  # Optional condition to run if false
     check: command  # Optional command to check
     error: "Error if command missing"  # Optional error message
     run: command {with_variables}  # Command to run
@@ -98,6 +100,32 @@ steps:
 ### Variables
 
 Variables are collected before execution and can be used in commands with `{variable_name}` syntax. Variables can be conditional based on other variables.
+
+Variables and steps can use both positive (`if`) and negative (`if-not`) conditions:
+- `if: variable_name` - Only show/run if variable is true
+- `if-not: variable_name` - Only show/run if variable is false
+
+These conditions can be used to create branching workflows, like:
+```yaml
+variables:
+  use_typescript:
+    prompt: "Use TypeScript?"
+    type: boolean
+  
+  babel:
+    prompt: "Add Babel?"
+    type: boolean
+    if-not: use_typescript  # Only ask about Babel if NOT using TypeScript
+
+steps:
+  - name: Install TypeScript
+    if: use_typescript
+    run: npm install typescript
+  
+  - name: Install Babel
+    if-not: use_typescript
+    run: npm install @babel/core
+```
 
 Supported variable types:
 - `string` (default): Free text input

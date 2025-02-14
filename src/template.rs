@@ -9,12 +9,14 @@ pub struct Template {
     pub name: String,
     pub description: String,
     pub emoji: String,
-    pub variables: HashMap<String, Variable>,
+    #[serde(default)]
+    pub variables: Vec<TemplateVariable>,
     pub steps: Vec<Step>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct Variable {
+pub struct TemplateVariable {
+    pub name: String,
     pub prompt: String,
     #[serde(rename = "type")]
     pub type_: Option<String>,
@@ -22,6 +24,8 @@ pub struct Variable {
     #[serde(rename = "if")]
     pub if_: Option<String>,
     pub if_condition: Option<String>,
+    #[serde(rename = "if-not")]
+    pub if_not: Option<String>,
     pub options: Option<Vec<String>>,
 }
 
@@ -32,6 +36,8 @@ pub struct Step {
     pub if_: Option<String>,
     #[serde(rename = "if")]
     pub if_condition: Option<String>,
+    #[serde(rename = "if-not")]
+    pub if_not: Option<String>,
     #[serde(default)]
     pub run: Option<String>,
     #[serde(default)]
@@ -51,6 +57,7 @@ pub struct CopyStep {
 pub fn load_templates() -> io::Result<HashMap<String, Template>> {
     let template_dir = get_template_dir()?;
     let mut templates = HashMap::new();
+    let mut had_errors = false;
 
     if !template_dir.exists() {
         fs::create_dir_all(&template_dir)?;
@@ -61,15 +68,56 @@ pub fn load_templates() -> io::Result<HashMap<String, Template>> {
         let path = entry.path();
         
         if path.extension().and_then(|s| s.to_str()) == Some("yml") {
-            let template: Template = serde_yaml::from_str(&fs::read_to_string(&path)?)
-                .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-            
-            let name = path.file_stem()
+            let template_name = path.file_stem()
                 .and_then(|s| s.to_str())
-                .unwrap()
+                .unwrap_or("unknown")
                 .to_string();
-                
-            templates.insert(name, template);
+
+            match fs::read_to_string(&path) {
+                Ok(content) => {
+                    match serde_yaml::from_str(&content) {
+                        Ok(template) => {
+                            templates.insert(template_name, template);
+                        },
+                        Err(e) => {
+                            had_errors = true;
+                            eprintln!("⚠️  Error parsing template '{}': {}", path.display(), e);
+                            eprintln!("   This template will be skipped. Please check the YAML format.");
+                            
+                            // If it's specifically a variables format error, show migration help
+                            if e.to_string().contains("variables: invalid type: map") {
+                                eprintln!("\nℹ️  The template format has changed. Variables should now be a sequence.");
+                                eprintln!("   Update your template from:");
+                                eprintln!("   variables:");
+                                eprintln!("     use_typescript:");
+                                eprintln!("       prompt: \"Use TypeScript?\"");
+                                eprintln!("\n   To:");
+                                eprintln!("   variables:");
+                                eprintln!("     - name: use_typescript");
+                                eprintln!("       prompt: \"Use TypeScript?\"\n");
+                            }
+                        }
+                    }
+                },
+                Err(e) => {
+                    had_errors = true;
+                    eprintln!("⚠️  Error reading template file '{}': {}", path.display(), e);
+                }
+            }
+        }
+    }
+
+    if templates.is_empty() {
+        if had_errors {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidData,
+                "No valid templates found due to parsing errors. Please fix the template files and try again."
+            ));
+        } else {
+            return Err(io::Error::new(
+                io::ErrorKind::NotFound,
+                "No templates found. Try running with --examples to install example templates."
+            ));
         }
     }
 
