@@ -7,16 +7,16 @@ emoji: 🦀
 # - set from command output
 # - hardcoded defaults
 variables:
-  use_github:
+  - name: use_github
     prompt: Create GitHub repository?
     type: boolean
     default: false
-  use_tests:
+  - name: use_tests
     prompt: "Include test setup?"
     type: boolean
     default: "true"
   
-  dependencies:
+  - name: dependencies
     prompt: "Select dependencies to include"
     type: multiselect
     options:
@@ -25,7 +25,7 @@ variables:
       - "clap"
       - "reqwest"
   
-  project_type:
+  - name: project_type
     prompt: "Choose project type"
     type: select
     options:
@@ -55,5 +55,5 @@ steps:
     run: |
       git add .
       git commit -m 'Initial commit'
-      gh repo create {project_dir} --private --source=. --remote=origin
+      gh repo create {project_name} --private --source=. --remote=origin
       git push -u origin main 

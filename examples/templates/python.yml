@@ -3,7 +3,7 @@ description: A Python project using Poetry
 emoji: 🐍
 
 variables:
-  use_github:
+  - name: use_github
     prompt: Create GitHub repository?
     type: boolean
     default: false
