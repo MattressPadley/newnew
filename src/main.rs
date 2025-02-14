@@ -56,14 +56,23 @@ fn create_project(config: ProjectConfig) -> io::Result<()> {
 
     // Process steps in sequence
     for step in &config.template.steps {
-        println!("⚡ {}", step.name);
+        println!("⚡ Checking step: {}", step.name);
 
-        // Check if step should be run based on condition
+        // Check if step should be run based on conditions
         if let Some(condition) = &step.if_condition {
             if !evaluate_condition(condition, &variables) {
+                println!("  ↪ Skipped: 'if' condition '{}' not met", condition);
                 continue;
             }
         }
+        if let Some(condition) = &step.if_not {
+            if evaluate_condition(condition, &variables) {
+                println!("  ↪ Skipped: 'if-not' condition '{}' not met", condition);
+                continue;
+            }
+        }
+
+        println!("  ▶ Executing step");
 
         // Check if required command exists
         if let Some(check_cmd) = &step.check {
@@ -167,6 +176,14 @@ fn create_project(config: ProjectConfig) -> io::Result<()> {
 }
 
 fn evaluate_condition(condition: &str, variables: &HashMap<String, String>) -> bool {
+    // Check if it's a negated condition
+    if condition.starts_with('!') {
+        let actual_condition = &condition[1..];
+        return variables.get(actual_condition)
+            .map(|v| v != "true")
+            .unwrap_or(true);
+    }
+    
     variables.get(condition)
         .map(|v| v == "true")
         .unwrap_or(false)

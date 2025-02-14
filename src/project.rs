@@ -14,13 +14,28 @@ pub struct ProjectConfig {
 
 pub fn prompt_project_config(with_examples: bool, target_dir: Option<String>) -> ProjectConfig {
     // Load config
-    let config = Config::load().expect("Failed to load config");
+    let config = match Config::load() {
+        Ok(config) => config,
+        Err(e) => {
+            eprintln!("⚠️  Failed to load config: {}", e);
+            eprintln!("   Using default configuration.");
+            Config::default()
+        }
+    };
     
     // Copy example templates if flag is set
-    copy_example_templates_if_needed(with_examples).expect("Failed to copy example templates");
+    if let Err(e) = copy_example_templates_if_needed(with_examples) {
+        eprintln!("⚠️  Failed to copy example templates: {}", e);
+    }
     
     // Load templates
-    let templates = load_templates().expect("Failed to load templates");
+    let templates = match load_templates() {
+        Ok(templates) => templates,
+        Err(e) => {
+            eprintln!("❌ {}", e);
+            std::process::exit(1);
+        }
+    };
     
     // Create formatted template options
     let template_options: Vec<String> = templates
@@ -45,10 +60,18 @@ pub fn prompt_project_config(with_examples: bool, target_dir: Option<String>) ->
     let mut variables = HashMap::new();
     variables.insert("project_name".to_string(), name.clone());
     
-    for (var_name, var) in &template.variables {
-        // Skip if condition is not met
+    // Process variables in order
+    for var in &template.variables {
+        // Check both if and if-not conditions
         if let Some(condition) = &var.if_condition {
             if !evaluate_condition(condition, &variables) {
+                println!("↪ Skipping variable '{}': condition '{}' not met", var.name, condition);
+                continue;
+            }
+        }
+        if let Some(condition) = &var.if_not {
+            if evaluate_condition(condition, &variables) {
+                println!("↪ Skipping variable '{}': if-not condition '{}' not met", var.name, condition);
                 continue;
             }
         }
@@ -88,7 +111,7 @@ pub fn prompt_project_config(with_examples: bool, target_dir: Option<String>) ->
                 }
             }
         };
-        variables.insert(var_name.clone(), value);
+        variables.insert(var.name.clone(), value);
     }
 
     ProjectConfig {
@@ -104,6 +127,14 @@ pub fn prompt_project_config(with_examples: bool, target_dir: Option<String>) ->
 }
 
 fn evaluate_condition(condition: &str, variables: &HashMap<String, String>) -> bool {
+    // Check if it's a negated condition
+    if condition.starts_with('!') {
+        let actual_condition = &condition[1..];
+        return variables.get(actual_condition)
+            .map(|v| v != "true")
+            .unwrap_or(true);
+    }
+    
     variables.get(condition)
         .map(|v| v == "true")
         .unwrap_or(false)
