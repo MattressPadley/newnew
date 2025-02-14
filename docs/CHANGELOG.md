@@ -1,11 +1,8 @@
 # Changelog
 
-# 0.3.0 (2025-02-10)
+# 0.4.0 (2025-02-13)
 
-- 📚 --dir arg
-- ✨ --dir arg
-- 🐛 example vars
-- 📚 document --example
-- ✨ args + --example
-- 🔧 remove unused file
+- 📚 update RM
+- ✨ add if-not condition
+- 🔧 update lock
 
