@@ -160,8 +160,10 @@ fn create_project(config: ProjectConfig) -> io::Result<()> {
                 let command = parts.first().unwrap();
                 let args = &parts[1..];
 
-                Command::new(command)
-                    .args(args)
+                // Use shell to execute command to properly handle redirection
+                Command::new("sh")
+                    .arg("-c")
+                    .arg(&expanded_cmd)
                     .current_dir(&project_path)
                     .status()
                     .map_err(|e| io::Error::new(
